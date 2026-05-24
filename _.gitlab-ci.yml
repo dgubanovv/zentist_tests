@@ -1,0 +1,31 @@
+variables:
+  pytest_args:
+    description: "Параметры pytest (например ссылка на сьют относительно root --> tests/test_e2e.py"
+
+stages:
+  - test
+
+test:
+  stage: test
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "push"
+      when: never
+    - if: $pytest_args == ""
+      when: never
+    - when: on_success
+  variables:
+    ALLURE_ENDPOINT: https://allure-ops-url.com
+    ALLURE_PROJECT_ID: 7 # actual project ID
+    ALLURE_RESULTS: ./allure-results # folder with saved results to copy to the allure ops server
+    ALLURE_TOKEN: 11b0e00b-b5f5-4fb5-aca8-ead6fde351ac # token for allure
+  before_script:
+    - rm -rf ./allure-results
+    - curl -fsSL https://github.com/allure-framework/allurectl/releases/latest/download/allurectl_linux_amd64 -o allurectl
+    - chmod +x allurectl
+    - ls -l .
+    - pip3 install virtualenv
+    - virtualenv venv
+    - source venv/bin/activate
+    - pip3 install -r requirements.txt
+  script:
+    - ./allurectl watch --insecure --results ./allure-results -- pytest -s --alluredir ./allure-results $pytest_args
